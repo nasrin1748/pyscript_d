@@ -1,0 +1,73 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    <style>
+      body { font-family: monospace; background: #f9f9f9; }
+      .banner { color: #008b8b; font-weight: bold; font-size: 18px; }
+      .output { background: #fff; padding: 10px; border: 1px solid #ccc; margin-top: 12px; }
+      .error { color: red; }
+      label { color: #228b22; }
+      input { margin: 3px; }
+      button { margin-top: 6px; }
+      pre { color: #444; }
+    </style>
+  </head>
+  <body>
+    <div class="banner">
+      ╔══════════════════════════════════════╗<br>
+      ║        CALENDAR ASSISTANT           ║<br>
+      ╚══════════════════════════════════════╝
+    </div>
+    <form id="calform">
+      <label>Enter Year: <input type="number" id="year" required value="2025"></label>
+      <label>Enter Month (1-12): <input type="number" min="1" max="12" id="month" required value="6"></label>
+      <label>Enter Day: <input type="number" min="1" max="31" id="day" required value="9"></label>
+      <button type="submit">Show Calendar</button>
+    </form>
+    <div class="output" id="output"></div>
+    <script>
+      let pyodideReadyPromise = loadPyodide();
+      document.getElementById("calform").onsubmit = function(e) {
+        e.preventDefault();
+        document.getElementById("output").innerHTML = "Loading calendar...";
+        let year = document.getElementById("year").value;
+        let month = document.getElementById("month").value;
+        let day = document.getElementById("day").value;
+        let code = `
+from calendar import TextCalendar
+import datetime
+
+output = ""
+
+try:
+    year = int(${year})
+    month = int(${month})
+    day = int(${day})
+
+    cal = TextCalendar()
+    output += "═══════════════════════════════════\\n"
+    output += f"Calendar for {datetime.datetime(year, month, day).strftime('%B %Y')}\\n"
+    output += "═══════════════════════════════════\\n"
+    output += "Mo Tu We Th Fr Sa Su\\n"
+    output += cal.formatmonth(year, month, w=2, l=1)
+    date = datetime.datetime(year, month, day)
+    output += "\\n═══════════════════════════════════\\n"
+    output += f"Selected Date: {date.strftime('%A, %B %d, %Y')}\\n"
+    output += "═══════════════════════════════════\\n"
+    output += "\\nFull Year Calendar:\\n"
+    output += cal.formatyear(year, 2, 1, 8, 3)
+except ValueError:
+    output = "Error: Please enter valid numbers for date."
+except Exception as e:
+    output = f"An error occurred: {str(e)}"
+output
+`;
+        pyodideReadyPromise.then(function(pyodide) {
+          pyodide.runPythonAsync(code).then(function(result) {
+            document.getElementById("output").innerHTML = "<pre>" + result + "</pre>";
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
